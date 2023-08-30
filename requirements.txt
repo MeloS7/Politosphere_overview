@@ -1,0 +1,11 @@
+trl
+peft
+scipy
+wandb
+argparse
+BitsAndBytes
+accelerate
+xformers
+langchain
+tokenizers==0.13.3
+transformers==4.31.0
