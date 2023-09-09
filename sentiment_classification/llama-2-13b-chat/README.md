@@ -63,6 +63,14 @@ Sentiment: [/INST] positive </s>
 
 ## Experiment
 
+Training Dataset: SST2 Train Set
+
+Validation Dataset: SST2 Validation Set (length of 872)
+
+Max_seq_length = 256
+
+Learning Rate = 2e-4
+
 | Method              | # Training data | Accuracy | F1-score | Training Loss Variations | Irregular Output  |
 | ------------------- | --------------- | -------- | -------- | ------------------------ | ----------------- |
 | Fine-tuning (QLoRA) | 100 (1 epoch)   |          |          | 15.9→14.077              | All               |
