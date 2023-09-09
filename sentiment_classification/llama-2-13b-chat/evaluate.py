@@ -1,5 +1,4 @@
 import torch
-import re
 import os
 import argparse
 from tqdm import tqdm
@@ -8,9 +7,8 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 from huggingface_hub import login
 from datasets import load_dataset
 from collections import Counter
+from sklearn.metrics import classification_report
 from torch.utils.data import Dataset, DataLoader
-from torch.nn.utils.rnn import pad_sequence
-
 
 class CustomDataset(Dataset):
     def __init__(self, dataset, tokenizer):
@@ -37,18 +35,21 @@ class CustomDataset(Dataset):
 def collate_fn(batch):
     input_ids = [item['input_ids'].tolist() for item in batch]
     attention_mask = [item['attention_mask'].tolist() for item in batch]
-    labels = [item['labels'] for item in batch]
+    labels = [item['labels'].tolist() for item in batch]
 
     # Left Padding
     max_length = max([len(item) for item in input_ids])
     input_ids = [[0]*(max_length - len(item)) + item for item in input_ids]
     attention_mask = [[0]*(max_length - len(item)) + item for item in attention_mask]
 
+    # Right Padding for labels
+    max_length_label = max([len(item) for item in labels])
+    labels = [item + [0]*(max_length_label - len(item)) for item in labels]
+
     # Convert lists to tensors
     input_ids = torch.tensor(input_ids)
     attention_mask = torch.tensor(attention_mask)
-    # Usually, labels are not padded
-    labels = pad_sequence(labels, batch_first=True, padding_value=-100)
+    labels = torch.tensor(labels)
 
     return {
         'input_ids': input_ids,
@@ -63,11 +64,12 @@ def evaluate_SFT(peft_model, dataset, tokenizer, batch_size=16):
 
     peft_model.eval()
 
-    compared_result = []
+    predictions = []
     invalid_label = []
+    golden_label = []
 
     for i, batch in enumerate(data_loader):
-        print("Batch {}/{}".format(i+1, len(data_loader)/batch_size))
+        print("Batch {}/{}".format(i+1, len(data_loader)))
         # Move batch to GPU
         input_ids = batch["input_ids"].to("cuda")
         attention_mask = batch["attention_mask"].to("cuda")
@@ -87,55 +89,73 @@ def evaluate_SFT(peft_model, dataset, tokenizer, batch_size=16):
 
         # Evaluate the generated text
         for idx in range(len(outputs_text)):
-            print("Sample", idx)
-            print("Outputs:", outputs[idx])
-            print("Generated text:", outputs_text[idx])
             # Extract the last sentence
+            # print("Generated text of sample", idx, ":")
+            # print(outputs_text[idx])
             selected_sentiment = outputs_text[idx].split("Sentiment: ")[1].strip()
-            selected_sentiment = selected_sentiment.split(" ")[1].lower()
-            
+            selected_sentiment = selected_sentiment.split("[/INST] ")[1]
+            selected_sentiment = selected_sentiment.split(" ")[1].lower().strip()
+
+            # print("Selected sentiment:", selected_sentiment)
+            # assert 1==2
+
             if selected_sentiment not in ['positive', 'negative']:
                 invalid_label.append(selected_sentiment)
-                compared_result.append(0)
-                continue
-            
-            if selected_sentiment == label_decoded[idx]:
-                compared_result.append(1)
+                predictions.append("invalid")
             else:
-                compared_result.append(0)
-        assert 1==2
+                predictions.append(selected_sentiment)
+            golden_label.append(label_decoded[idx].lower()) 
+
+        # assert 1==2
         # if i >= 5:
         #     break
         # else:
         #     print("Batch", i, "done!")
 
-    return compared_result, invalid_label
+    return predictions, invalid_label, golden_label
 
-def showEvalResults(compare_results, invalid_label):
+def calculate_accuracy(predictions, golden_label):
+    # Check if the length of the predictions and golden labels are the same
+    if len(predictions) != len(golden_label):
+        raise ValueError("The length of the predictions and golden labels are not the same!")
+
+    # Compute the accuracy
+    correct = sum(1 for p, g in zip(predictions, golden_label) if p == g)
+    total = len(predictions)
+    accuracy = correct / total
+    return accuracy
+
+def showEvalResults(predictions, invalid_label, golden_label):
     counted_elements = Counter(invalid_label)
-    accuracy = compare_results.count(1)/len(compare_results)
+    accuracy = calculate_accuracy(predictions, golden_label)
+    f1 = classification_report(golden_label, predictions)
     print("Accuracy:", accuracy)
-    print("# of Invalid labels:", len(invalid_label), "out of", len(compare_results), "samples")
+    print("# of Invalid labels:", len(invalid_label), "out of", len(predictions), "samples")
     print("Invalid labels:", counted_elements)
+    print("F1 score:", f1)
+
 
 def main():
     # Read arguments
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--batch_size", type=int, default=16)
-    parser.add_argument("--base_model_name", type=str, default="meta-llama/Llama-2-13b-hf")
-    parser.add_argument("--adapters_name", type=str, default="llama-2-13b-hf-SFT-100-1ep")
+    parser.add_argument("--base_model_name", type=str, default="meta-llama/Llama-2-13b-chat-hf")
+    parser.add_argument("--adapters_name", type=str, default="Llama-2-13b-chat-hf-epoch1-with-system-prompt")
+    parser.add_argument("--dataset_name", type=str, default="OneFly7/llama2-SST2-SFT-with-system-prompt")
     
     args = parser.parse_args()
 
     batch_size = args.batch_size
     base_model_name = args.base_model_name
-    adapters_name = "./models/" + args.adapters_name
+    adapters_name = "./models/meta-llama/" + args.adapters_name
+    dataset_name = args.dataset_name
 
-    # Login to Hugging Face
+    # # Login to Hugging Face
     # HUGGINGFACE_TOKEN = os.environ.get("HUGGINGFACE_TOKEN")
     # if not HUGGINGFACE_TOKEN:
     #     raise ValueError("Hugging Face token not provided!")
+    
     HUGGINGFACE_TOKEN = "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"
 
     login(token=HUGGINGFACE_TOKEN)
@@ -143,12 +163,7 @@ def main():
     print("=====================================")
 
     # Load the validation dataset
-    dataset_name = "OneFly7/llama2-sst2-fine-tuning-without-system-info"
-    validataion_dataset = load_dataset(dataset_name, split="validation")
-
-    ## Version 2-7b for finetuning
-    # base_model_name = "meta-llama/Llama-2-13b-hf"
-    # adapters_name = "./models/llama-2-13b-hf-SFT-5000-1ep"
+    validation_dataset = load_dataset(dataset_name, split="validation")
 
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
@@ -179,34 +194,16 @@ def main():
 
     tokenizer = AutoTokenizer.from_pretrained(base_model_name, trust_remote_code=True)
     tokenizer.pad_token = tokenizer.eos_token
-
-    #### Simple test
-    # print("=====================================")
-    # prompt = "<s><INST> Sentence: I hate this movie. </INST> Sentiment:"
-    # input_ids = tokenizer(prompt, return_tensors="pt").input_ids.to("cuda")
-    # attention_mask = tokenizer(prompt, return_tensors="pt").attention_mask.to("cuda")
-
-    # Generate for the entire batch
-    # outputs = peft_model.generate(
-    #     input_ids=input_ids,
-    #     attention_mask=attention_mask,
-    #     max_new_tokens=80,
-    #     pad_token_id=tokenizer.eos_token_id
-    # )
-    ####
-
-    # Decode the generated text and labels
-    outputs_text = tokenizer.batch_decode(outputs, skip_special_tokens=True)
-    print(outputs_text)
-    assert 1==2
+    tokenizer.padding_side = "left"
 
     # Evaluate the model
     print("Evaluating the model " + adapters_name + " ...")
-    comp_res, invalid_label = evaluate_SFT(peft_model, validataion_dataset, tokenizer, batch_size)
-    print("Evaluation completed!")
 
-    # Show the results
-    showEvalResults(comp_res, invalid_label)
+    predictions, invalid_label, golden_label = evaluate_SFT(peft_model, validation_dataset, tokenizer, batch_size)
+    print("Evaluation on the validation dataset:")
+    showEvalResults(predictions, invalid_label, golden_label)
+
+    print("\nEvaluation completed!")
 
 if __name__ == "__main__":
     main()
