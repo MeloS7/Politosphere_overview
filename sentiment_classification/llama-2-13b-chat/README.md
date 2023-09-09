@@ -9,12 +9,8 @@ We demonstrate how to fine-tune the **LLaMA2-13b-chat-hf** model using QLoRA (Qu
 ## File
 
 - **pre_processing.ipynb**: You can find the SST2 dataset preprocessing steps and the data upload process to HuggingFace in this notebook.
-
 - **train.py**: You can find the SFT processes in this python file, which supports you train models by epoch or step.
-
 - **evaluate.py**: You can find the model evaluation in this python file. The name of adapters_name is mandatory.
-
-  
 
 ## Usage
 
@@ -28,6 +24,31 @@ python train.py --stop_condition steps --steps 20 --max_seq_length 256
 # Evaluate model
 python evaluate.py --adapters_name Llama-2-13b-chat-hf-epoch1
 
+```
+
+
+
+## Data Pre-processing
+
+### Prompt Template
+
+```tex
+<s>[INST] <<SYS>>
+System prompt
+<</SYS>>
+
+User prompt [/INST] Model answer </s>
+```
+
+### Example on SST2
+
+```tex
+<s>[INST] <<SYS>>
+You are a helpful, respectful and honest sentiment analysis assistant. And you are supposed to classify the sentiment of the sentence into one of the following categories: 'positive' or 'negative'.
+<</SYS>>
+
+Sentence: hide new secretions from the parental units 
+Sentiment: [/INST] positive </s>
 ```
 
 
