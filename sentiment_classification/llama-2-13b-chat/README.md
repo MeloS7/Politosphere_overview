@@ -71,6 +71,8 @@ Max_seq_length = 256
 
 Learning Rate = 2e-4
 
+Default Epoch = 1
+
 | Method              | # Training data | Accuracy | F1-score | Training Loss Variations | Irregular Output  |
 | ------------------- | --------------- | -------- | -------- | ------------------------ | ----------------- |
 | Fine-tuning (QLoRA) | 100 (1 epoch)   |          |          | 15.9→14.077              | All               |
