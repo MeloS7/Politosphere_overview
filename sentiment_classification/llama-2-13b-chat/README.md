@@ -26,6 +26,13 @@ python evaluate.py --adapters_name Llama-2-13b-chat-hf-epoch1
 
 ```
 
+**Attention:** There is an optional line on line 50 in train.py for selecting a small range of training data. For instance, if you would like to train model on 100 data for several epochs, you should re-add this line.
+
+```python
+# Add this line for multiple epoch on 100 examples
+train_dataset = train_dataset.select(range(100))
+```
+
 
 
 ## Data Pre-processing
@@ -51,7 +58,9 @@ Sentence: hide new secretions from the parental units
 Sentiment: [/INST] positive </s>
 ```
 
-HuggingFace Dataset [Link](https://huggingface.co/datasets/OneFly7/llama2-SST2-SFT-with-system-prompt/viewer/default/train?row=27)
+HuggingFace Dataset [Link](https://huggingface.co/datasets/OneFly7/llama2-SST2-SFT-with-system-prompt/viewer/default/train?row=0)
+
+
 
 ## Experiment
 
