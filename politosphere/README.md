@@ -100,3 +100,4 @@ e.g. why were the authorities negotiating with terrorists ?
 
 - File folder `fine-tuning` is for fine-tuning llama-2-13b-hf model.
 - File folder `llama-2-13b-chat` is for fine-tuning llama-2-13b-chat-hf model, which we use in further research.
+- Jupyter Notebook `polito-llama2-13b-chat-few-inference` is for few-shot inference without any training.
