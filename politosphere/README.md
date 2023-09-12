@@ -91,3 +91,12 @@ e.g. women are funny , get over it nerd
 The sentence statements are describing gun support for owning / banning guns, but due to a lack of relevant context, or some other reason, we can sense the emotional inclination, but not the specific opinion or polarized aspect.
 
 e.g. why were the authorities negotiating with terrorists ?
+
+
+
+
+
+# File Structure
+
+- File folder `fine-tuning` is for fine-tuning llama-2-13b-hf model.
+- File folder `llama-2-13b-chat` is for fine-tuning llama-2-13b-chat-hf model, which we use in further research.

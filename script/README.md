@@ -24,7 +24,15 @@
     - merged_labels: "1:[1,2]" merge "Suppot Gun Polarized" and "Support Gun Non-Polarized" labels into new label 1.
     - new_labels: "1:'Support'" indicates the new label 1 is "Support".
 
+- dataset_analysis.py: To show the statistical analysis and the distribution of a dataset.
+
+    ```shell
+    python dataset_analysis.py --file_name daccord_yifei_v2_leo
+    ```
+
 - preprocessing_sst2.ipynb : A jupyter notebook to show you how to convert SST2 Dataset into LLaMA Prompt Template and upload to HuggingFace.
+
+- modify_labels.ipynb: A jupyter notebook to change label name in each dataset. For instance, you want to change label name from "others" to "other" manually.
 
 ## Attention!
 - Be careful with the dataset address, some of which I have specified the address prefix and suffix in the script.
