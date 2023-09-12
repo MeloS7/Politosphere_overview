@@ -70,13 +70,13 @@ def main():
     parser.add_argument(
         "--merged_labels", 
         help="The way to merge labels. e.g. 1:[1,2,3] means merge label 2 and 3 into label 1.", 
-        default="{1:[1,2], 4:[4,5], 7:[3,6,7]}",
+        default="{1:[1,4], 2:[2,5],3:[3,6,7]}",
         action="store"
     )
     parser.add_argument(
         "--new_labels",
         help="The new labels after merging. e.g. 1:'Support Gun', 4:'Anti Gun'",
-        default="{1:'Support', 4:'Anti', 7:'Others'}",
+        default="{1:'polarized', 2:'unpolarized', 3:'other'}",
         action="store"
     )
 
@@ -99,7 +99,7 @@ def main():
     new_dataset = merge_func(dataset_to_merge, new_label_map)
 
     # Save the new dataset
-    filename = "../data/" + args.file_name_1 + "_labelMerged.json"
+    filename = "../data/" + args.file_name_1 + "_6labels_keep_neu.json"
     with open(filename, 'w', encoding='utf-8') as f:
         for item in new_dataset:
             json.dump(item, f)

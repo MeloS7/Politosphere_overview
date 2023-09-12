@@ -155,3 +155,7 @@ cython_debug/
 /sentiment_classification/llama-2-13b-chat/models/
 /sentiment_classification/llama-2-13b-chat/results/
 /sentiment_classification/llama-2-13b-chat/wandb/
+
+/politosphere/llama-2-13b-chat/models/
+/politosphere/llama-2-13b-chat/results/
+/politosphere/llama-2-13b-chat/wandb/

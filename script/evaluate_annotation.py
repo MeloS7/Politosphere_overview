@@ -67,13 +67,13 @@ def main():
     parser.add_argument(
         "--file_name_1",
         help="Path to the self-annotated dataset file",
-        default='yifei',
+        default='yifei_v2',
         action="store"
     )
     parser.add_argument(
         "--file_name_2", 
         help="Path to the llama-annotated dataset file", 
-        default='llama2',
+        default='leo',
         action="store"
     )
 
